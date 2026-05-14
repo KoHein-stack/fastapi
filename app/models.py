@@ -1,5 +1,5 @@
-from .database import Base, engine
-from sqlalchemy import Column, Integer, String, Boolean
+from .database import Base
+from sqlalchemy import Boolean, Column, Integer, String, TIMESTAMP, text
 
 
 class Post(Base):
@@ -8,7 +8,7 @@ class Post(Base):
     id = Column(Integer, primary_key=True, index=True, nullable=False)
     title = Column(String, index=True, nullable=False)
     content = Column(String, index=True, nullable=False)
-    published = Column(Boolean, default=True)
-    created_at = Column(String, default="now()")
+    published = Column(Boolean, server_default='TRUE', nullable=False)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text("now()"))
 
 
