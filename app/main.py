@@ -17,7 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from .schema import PostCreate, PostUpdate, Post, UserCreate, UserOut
 from .schema import User, UserCreate
-from .router import post, user
+from .router import auth, post, user
  
  
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -54,6 +54,7 @@ while True:
 
 app.include_router(post.router)
 app.include_router(user.router)
+app.include_router(auth.router)
     
 @app.get("/")
 # Return a simple welcome message for the API root.
