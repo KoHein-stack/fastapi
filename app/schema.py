@@ -3,6 +3,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, field_validator
 from datetime import datetime
+from pydantic import conint
 
 
 class PostBase(BaseModel):
@@ -17,10 +18,19 @@ class PostCreate(PostBase):
 class PostUpdate(PostBase):
     pass
 
+class UserOut(BaseModel):
+    id: int
+    email: EmailStr
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class Post(PostBase):
     id: int
-    created_at: datetime 
-
+    created_at: datetime
+    owner_id: int
+    owner: Optional["UserOut"] = None 
     class Config:
         from_attributes = True
 
@@ -46,13 +56,6 @@ class User(UserBase):
     id: int
     created_at: datetime
 
-class UserOut(BaseModel):
-    id: int
-    email: EmailStr
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 class UserOutWithPassword(UserOut):
     password: str
@@ -75,3 +78,6 @@ class TokenData(BaseModel):
     id: Optional[int] = None
 
 
+class Vote(BaseModel):
+    post_id: int
+    dir: conint(le=1)
