@@ -9,6 +9,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     app_env: str = "development"
+    backend_cors_origins: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
     database_hostname: str
     database_port: str
     database_password: str
@@ -25,6 +26,15 @@ class Settings(BaseSettings):
             f"postgresql://{self.database_username}:{self.database_password}"
             f"@{self.database_hostname}:{self.database_port}/{self.database_name}"
         )
+
+    @computed_field
+    @property
+    def cors_origins(self) -> list[str]:
+        return [
+            origin.strip()
+            for origin in self.backend_cors_origins.split(",")
+            if origin.strip()
+        ]
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",

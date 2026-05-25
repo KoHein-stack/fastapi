@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 
 from app import oauth2
 from .. import models, utils
+from sqlalchemy import func
     
 from ..database import get_db
-from ..schema import Post, PostCreate, PostUpdate
+from ..schema import Post, PostCreate, PostOut, PostUpdate
 router = APIRouter(
     prefix="/posts",
     tags=["posts"]
@@ -16,7 +17,8 @@ router = APIRouter(
 
 
 
-@router.get("/", response_model=List[Post])
+# @router.get("/", response_model=List[Post])
+@router.get("/", response_model=List[PostOut])
 # Fetch all posts from the database, with an in-memory fallback if the query fails.
 async def get_posts(db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user),
                     limit: int = 10, skip: int = 0, search: Optional[str] = ""):
@@ -33,7 +35,14 @@ async def get_posts(db: Session = Depends(get_db), current_user: models.User = D
     #     return {"data": my_posts}
     # posts = db.query(models.Post).filter(models.Post.owner_id == current_user.id).limit(limit).offset(skip).all()
     posts = db.query(models.Post).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
-    return posts
+
+    results = db.query(models.Post, func.count(models.Vote.post_id).label("votes")).join(
+        models.Vote, models.Vote.post_id == models.Post.id, isouter=True).group_by(
+        models.Post.id).add_columns(
+            func.count(models.Vote.post_id).label("votes")
+            ).filter(models.Post.title.contains(search)).limit(limit).offset(skip).all()
+    # print(results)
+    return results
 
 
 
@@ -53,7 +62,6 @@ async def create_post(post: PostCreate = Body(...), db: Session = Depends(get_db
     db.add(new_post)
     db.commit()
     db.refresh(new_post)
-    print(new_post)
 
     return new_post
     
@@ -96,6 +104,8 @@ async def update_post(id: int, updated_post: PostUpdate = Body(...), db: Session
 
     if post is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Post with id: {id} not found")
+    if post.owner_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Not authorized to update this post")
     updated_query.update(updated_post.model_dump(), synchronize_session=False)
     db.commit()
     return  updated_query.first()

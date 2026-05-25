@@ -8,14 +8,9 @@ A simple FastAPI project for learning CRUD API routes with PostgreSQL.
 - PostgreSQL
 - A PostgreSQL database named `fastapi`
 
-The app currently connects with these database settings:
+The app reads database and JWT settings from `.env`. Use `.env.example` as the template.
 
-```text
-host=localhost
-database=fastapi
-user=postgres
-password=password
-```
+Do not commit `.env` to Git.
 
 ## Setup Commands
 
@@ -50,16 +45,90 @@ Create the PostgreSQL database:
 CREATE DATABASE fastapi;
 ```
 
-Create the `posts` table:
+For a fresh empty database, apply all migrations:
 
-```sql
-CREATE TABLE posts (
-    id SERIAL PRIMARY KEY,
-    title VARCHAR NOT NULL,
-    content VARCHAR NOT NULL,
-    published BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+```powershell
+alembic upgrade head
+```
+
+For an existing local database that already has the current tables, mark it as migrated:
+
+```powershell
+alembic stamp head
+```
+
+Create a new migration after changing SQLAlchemy models:
+
+```powershell
+alembic revision --autogenerate -m "describe change"
+```
+
+Apply pending migrations:
+
+```powershell
+alembic upgrade head
+```
+
+Check current migration version:
+
+```powershell
+alembic current
+```
+
+## Docker Commands
+
+Build and start FastAPI with PostgreSQL:
+
+```powershell
+docker compose up --build
+```
+
+Run containers in the background:
+
+```powershell
+docker compose up -d --build
+```
+
+Apply Alembic migrations inside the API container:
+
+```powershell
+docker compose exec api alembic upgrade head
+```
+
+Check migration version inside the API container:
+
+```powershell
+docker compose exec api alembic current
+```
+
+Stop containers:
+
+```powershell
+docker compose down
+```
+
+Stop containers and remove the PostgreSQL volume:
+
+```powershell
+docker compose down -v
+```
+
+Build and run with the production compose file:
+
+```powershell
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Apply migrations in production compose:
+
+```powershell
+docker compose -f docker-compose.prod.yml exec api alembic upgrade head
+```
+
+View production logs:
+
+```powershell
+docker compose -f docker-compose.prod.yml logs -f api
 ```
 
 ## Run The App
@@ -105,7 +174,7 @@ curl http://127.0.0.1:8000/posts
 Create a post:
 
 ```powershell
-curl -X POST http://127.0.0.1:8000/create_post `
+curl -X POST http://127.0.0.1:8000/posts/create_post `
   -H "Content-Type: application/json" `
   -d "{\"title\":\"My first post\",\"content\":\"Hello FastAPI\",\"published\":true}"
 ```

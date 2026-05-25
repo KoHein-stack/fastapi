@@ -26,15 +26,30 @@ class UserOut(BaseModel):
     class Config:
         from_attributes = True
 
+# class Post(PostBase):
+#     id: int
+#     created_at: datetime
+#     owner_id: int
+#     owner: Optional["UserOut"] = None 
+#     class Config:
+#         from_attributes = True
+
 class Post(PostBase):
     id: int
     created_at: datetime
     owner_id: int
-    owner: Optional["UserOut"] = None 
+    owner: UserOut
+
     class Config:
         from_attributes = True
 
 
+class PostOut(BaseModel):
+    Post: Post
+    votes: int
+
+    class Config:
+        from_attributes = True
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -80,4 +95,4 @@ class TokenData(BaseModel):
 
 class Vote(BaseModel):
     post_id: int
-    dir: conint(le=1)
+    dir: conint(ge=0, le=1)

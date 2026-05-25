@@ -4,13 +4,18 @@ from .database import engine, get_db
 # from sqlalchemy.orm import Session
 from .router import auth, post, user, vote
 from .config import settings
+from fastapi.middleware.cors import CORSMiddleware
  
- 
-
-models.Base.metadata.create_all(bind=engine)
-
 
 app = FastAPI()
+cross_origin = ['*']  # Allow all origins for development; adjust for production as needed
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cross_origin, #settings.cors_origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(post.router)
 app.include_router(user.router)
