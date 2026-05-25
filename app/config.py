@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import computed_field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,11 +10,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 class Settings(BaseSettings):
     app_env: str = "development"
     backend_cors_origins: str = "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
-    database_hostname: str
-    database_port: str
-    database_password: str
-    database_name: str
-    database_username: str
+    railway_database_url: str | None = Field(default=None, validation_alias="DATABASE_URL")
+    database_hostname: str | None = None
+    database_port: str | None = None
+    database_password: str | None = None
+    database_name: str | None = None
+    database_username: str | None = None
     secret_key: str
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
@@ -22,6 +23,24 @@ class Settings(BaseSettings):
     @computed_field
     @property
     def database_url(self) -> str:
+        if self.railway_database_url:
+            return self.railway_database_url.replace("postgres://", "postgresql://", 1)
+
+        missing_fields = [
+            field_name
+            for field_name in (
+                "database_hostname",
+                "database_port",
+                "database_password",
+                "database_name",
+                "database_username",
+            )
+            if getattr(self, field_name) is None
+        ]
+        if missing_fields:
+            missing = ", ".join(missing_fields)
+            raise ValueError(f"Missing database settings: {missing}")
+
         return (
             f"postgresql://{self.database_username}:{self.database_password}"
             f"@{self.database_hostname}:{self.database_port}/{self.database_name}"
